@@ -3,6 +3,7 @@ using Silk.NET.Input;
 using Silk.NET.Maths;
 using Silk.NET.OpenGL;
 using Silk.NET.Windowing;
+using StbImageSharp;
 
 class Program
 {
@@ -13,6 +14,7 @@ class Program
     private static uint _vbo;
     private static uint _ebo;
     private static uint _sProgram;
+    private static uint _texture;
 
     public static void Main(string[] args)
     {
@@ -42,10 +44,11 @@ class Program
 
         float[] vertices =
         {
-            0.5f,  0.5f, 0.0f,
-            0.5f, -0.5f, 0.0f,
-           -0.5f, -0.5f, 0.0f,
-           -0.5f,  0.5f, 0.0f,
+            // aPosition       | aTexCoords
+            1f,   1f, 0.0f,  1.0f, 0.0f,
+            1f,  -1f, 0.0f,  1.0f, 1.0f,
+           -1f,  -1f, 0.0f,  0.0f, 1.0f,
+           -1f,   1f, 0.0f,  0.0f, 0.0f
         };
 
         _vbo = _gl.GenBuffer();
@@ -74,20 +77,27 @@ class Program
         #version 330 core
         
         layout (location = 0) in vec3 aPosition;
+        layout (location = 1) in vec2 aTextureCoord;
+
+        out vec2 frag_texCoords;
         
         void main()
         {
             gl_Position = vec4(aPosition, 1.0);
+            frag_texCoords = aTextureCoord;
         }";
 
         const string fragmentCode = @"
         #version 330 core
         
+        uniform sampler2D uTexture;
+        in vec2 frag_texCoords;
         out vec4 out_color;
         
         void main()
         {
-            out_color = vec4(1.0, 0.5, 0.2, 1.0);
+            //out_color = vec4(frag_texCoords.x, frag_texCoords.y, 0.0, 1.0);
+            out_color = texture(uTexture, frag_texCoords);
         }";
 
         uint vertexShader = _gl.CreateShader(ShaderType.VertexShader);
@@ -128,11 +138,36 @@ class Program
 
         const uint positionLoc = 0;
         _gl.EnableVertexAttribArray(positionLoc);
-        _gl.VertexAttribPointer(positionLoc, 3, VertexAttribPointerType.Float, false, 3 * sizeof(float), (void*)0);
+        _gl.VertexAttribPointer(positionLoc, 3, VertexAttribPointerType.Float, false, 5 * sizeof(float), (void*)0);
+
+        const uint texCoordLoc = 1;
+        _gl.EnableVertexAttribArray(texCoordLoc);
+        _gl.VertexAttribPointer(texCoordLoc, 2, VertexAttribPointerType.Float, false, 5 * sizeof(float), (void*)(3 * sizeof(float)));
 
         _gl.BindVertexArray(0);
         _gl.BindBuffer(GLEnum.ArrayBuffer, 0);
         _gl.BindBuffer(GLEnum.ElementArrayBuffer, 0);
+
+        _texture = _gl.GenTexture();
+        _gl.ActiveTexture(TextureUnit.Texture0);
+        _gl.BindTexture(TextureTarget.Texture2D, _texture);
+
+        ImageResult result = ImageResult.FromMemory(File.ReadAllBytes("img/krol.jpg"), ColorComponents.RedGreenBlueAlpha);
+
+        fixed (byte* ptr = result.Data)
+        {
+            _gl.TexImage2D(TextureTarget.Texture2D, 0, InternalFormat.Rgba, (uint)result.Width, (uint)result.Height, 0, PixelFormat.Rgba, PixelType.UnsignedByte, ptr);
+        }
+
+        _gl.TexParameterI(GLEnum.Texture2D, GLEnum.TextureWrapS, (int)TextureWrapMode.Repeat);
+        _gl.TexParameterI(GLEnum.Texture2D, GLEnum.TextureWrapT, (int)TextureWrapMode.Repeat);
+        _gl.TexParameterI(GLEnum.Texture2D, GLEnum.TextureMinFilter, (int)TextureMinFilter.Nearest);
+        _gl.TexParameterI(GLEnum.Texture2D, GLEnum.TextureMagFilter, (int)TextureMagFilter.Nearest);
+
+        _gl.BindTexture(TextureTarget.Texture2D, 0);
+
+        int samplerLoc = _gl.GetUniformLocation(_sProgram, "uTexture");
+        _gl.Uniform1(samplerLoc, 0);
     }
 
     private static unsafe void OnRender(double deltaTime)
@@ -141,6 +176,8 @@ class Program
         _gl.Clear(ClearBufferMask.ColorBufferBit);
 
         _gl.BindVertexArray(_vao);
+        _gl.ActiveTexture(TextureUnit.Texture0);
+        _gl.BindTexture(TextureTarget.Texture2D, _texture);
         _gl.UseProgram(_sProgram);
         _gl.DrawElements(PrimitiveType.Triangles, 6, DrawElementsType.UnsignedInt, (void*)0);
     }
