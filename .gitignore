@@ -1,0 +1,10 @@
+# VIM
+*.swp
+*.un~
+*~
+# .NET PROJECT
+bin/
+obj/
+
+# MACOS GARBAGE
+.DS_Store
