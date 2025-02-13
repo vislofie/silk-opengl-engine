@@ -9,11 +9,12 @@ class Program
 {
     private static IWindow _window;
 
+    private static Shader _shader;
+
     private static GL _gl;
     private static uint _vao;
     private static uint _vbo;
     private static uint _ebo;
-    private static uint _sProgram;
     private static uint _texture;
 
     public static void Main(string[] args)
@@ -72,69 +73,8 @@ class Program
         {
             _gl.BufferData(BufferTargetARB.ElementArrayBuffer, (nuint) (indices.Length * sizeof(uint)), buf, BufferUsageARB.StaticDraw);
         }
-
-        const string vertexCode = @"
-        #version 330 core
         
-        layout (location = 0) in vec3 aPosition;
-        layout (location = 1) in vec2 aTextureCoord;
-
-        out vec2 frag_texCoords;
-        
-        void main()
-        {
-            gl_Position = vec4(aPosition, 1.0);
-            frag_texCoords = aTextureCoord;
-        }";
-
-        const string fragmentCode = @"
-        #version 330 core
-        
-        uniform sampler2D uTexture;
-        in vec2 frag_texCoords;
-        out vec4 out_color;
-        
-        void main()
-        {
-            //out_color = vec4(frag_texCoords.x, frag_texCoords.y, 0.0, 1.0);
-            out_color = texture(uTexture, frag_texCoords);
-        }";
-
-        uint vertexShader = _gl.CreateShader(ShaderType.VertexShader);
-        _gl.ShaderSource(vertexShader, vertexCode);
-        _gl.CompileShader(vertexShader);
-        _gl.GetShader(vertexShader, ShaderParameterName.CompileStatus, out int vStatus);
-        if (vStatus != (int) GLEnum.True)
-        {
-            throw new Exception("Vertex shader failed to compile!\n" + _gl.GetShaderInfoLog(vertexShader));
-        }
-
-        uint fragmentShader = _gl.CreateShader(ShaderType.FragmentShader);
-        _gl.ShaderSource(fragmentShader, fragmentCode);
-        _gl.CompileShader(fragmentShader);
-        _gl.GetShader(fragmentShader, GLEnum.CompileStatus, out int fStatus);
-        if (fStatus != (int) GLEnum.True)
-        {
-            throw new Exception("Fragment shader failed to compile!\n" + _gl.GetShaderInfoLog(fragmentShader));
-        }
-        
-        _sProgram = _gl.CreateProgram();
-
-        _gl.AttachShader(_sProgram, vertexShader);
-        _gl.AttachShader(_sProgram, fragmentShader);
-
-        _gl.LinkProgram(_sProgram);
-
-        _gl.GetProgram(_sProgram, GLEnum.LinkStatus, out int lStatus);
-        if (lStatus != (int) GLEnum.True)
-        {
-            throw new Exception("Shader program failed to link!" + _gl.GetProgramInfoLog(_sProgram));
-        }
-
-        _gl.DetachShader(_sProgram, vertexShader);
-        _gl.DetachShader(_sProgram, fragmentShader);
-        _gl.DeleteShader(vertexShader);
-        _gl.DeleteShader(fragmentShader);
+        _shader = new Shader(_gl, "shader/shader.vert", "shader/shader.frag");
 
         const uint positionLoc = 0;
         _gl.EnableVertexAttribArray(positionLoc);
@@ -166,7 +106,7 @@ class Program
 
         _gl.BindTexture(TextureTarget.Texture2D, 0);
 
-        int samplerLoc = _gl.GetUniformLocation(_sProgram, "uTexture");
+        int samplerLoc = _gl.GetUniformLocation(_shader.ProgramID, "uTexture");
         _gl.Uniform1(samplerLoc, 0);
     }
 
@@ -178,7 +118,7 @@ class Program
         _gl.BindVertexArray(_vao);
         _gl.ActiveTexture(TextureUnit.Texture0);
         _gl.BindTexture(TextureTarget.Texture2D, _texture);
-        _gl.UseProgram(_sProgram);
+        _shader.Use();
         _gl.DrawElements(PrimitiveType.Triangles, 6, DrawElementsType.UnsignedInt, (void*)0);
     }
 

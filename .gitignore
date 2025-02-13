@@ -8,3 +8,5 @@ obj/
 
 # MACOS GARBAGE
 .DS_Store
+
+*.pdf
