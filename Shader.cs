@@ -1,6 +1,7 @@
+using System.Numerics;
 using Silk.NET.OpenGL;
 
-public class Shader
+public class Shader : IDisposable
 {
     public uint ProgramID { get; private set; }
     private GL _gl;
@@ -45,8 +46,24 @@ public class Shader
         return shader;
     }
 
+    public unsafe void SetUniform(string name, Matrix4x4 value)
+    {
+        int loc = _gl.GetUniformLocation(ProgramID, name);
+        if (loc == -1)
+        {
+            throw new Exception($"{name} uniform not found on shader.");
+        }
+        Use();
+        _gl.UniformMatrix4(loc, 1, false, (float*)&value);
+    }
+
     public void Use()
     {
         _gl.UseProgram(ProgramID);
+    }
+
+    public void Dispose()
+    {
+        _gl.DeleteProgram(ProgramID);
     }
 }

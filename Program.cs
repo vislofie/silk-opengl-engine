@@ -1,4 +1,5 @@
 ﻿using System.Drawing;
+using System.Numerics;
 using Silk.NET.Input;
 using Silk.NET.Maths;
 using Silk.NET.OpenGL;
@@ -43,13 +44,20 @@ class Program
         _vao = _gl.GenVertexArray();
         _gl.BindVertexArray(_vao);
 
+        const float textureScale = 0.75f;
+
         float[] vertices =
         {
-            // aPosition       | aTexCoords
-            1f,   1f, 0.0f,  1.0f, 0.0f,
-            1f,  -1f, 0.0f,  1.0f, 1.0f,
-           -1f,  -1f, 0.0f,  0.0f, 1.0f,
-           -1f,   1f, 0.0f,  0.0f, 0.0f
+        //     // aPosition       | aTexCoords
+        //     1f,   1f, 0.0f,  1.0f, 0.0f,
+        //     1f,  -1f, 0.0f,  1.0f, 1.0f,
+        //    -1f,  -1f, 0.0f,  0.0f, 1.0f,
+        //    -1f,   1f, 0.0f,  0.0f, 0.0f
+
+            1f * textureScale,   1f * textureScale, 0.0f,  1.0f, 0.0f,
+            1f * textureScale,  -1f * textureScale, 0.0f,  1.0f, 1.0f,
+           -1f * textureScale,  -1f * textureScale, 0.0f,  0.0f, 1.0f,
+           -1f * textureScale,   1f * textureScale, 0.0f,  0.0f, 0.0f
         };
 
         _vbo = _gl.GenBuffer();
@@ -84,6 +92,19 @@ class Program
         _gl.EnableVertexAttribArray(texCoordLoc);
         _gl.VertexAttribPointer(texCoordLoc, 2, VertexAttribPointerType.Float, false, 5 * sizeof(float), (void*)(3 * sizeof(float)));
 
+        const uint transformLoc = 2;
+        _gl.EnableVertexAttribArray(transformLoc);
+        _gl.VertexAttribPointer(transformLoc, 4, VertexAttribPointerType.Float, false, 4 * sizeof(float), (void*)0);
+
+        Matrix4x4 modelMatrix = Matrix4x4.CreateRotationX(-75 * MathF.PI / 180.0f);
+        Matrix4x4 viewMatrix = Matrix4x4.Identity;
+        viewMatrix.Translation = new Vector3(0, -0.6f, -3.0f);
+        Matrix4x4 proj = Matrix4x4.CreatePerspectiveFieldOfView(45 * MathF.PI / 180.0f, 800.0f / 600.0f, 0.1f, 100f);
+
+        _shader.SetUniform("model", modelMatrix);
+        _shader.SetUniform("view", viewMatrix);
+        _shader.SetUniform("proj", proj);
+
         _gl.BindVertexArray(0);
         _gl.BindBuffer(GLEnum.ArrayBuffer, 0);
         _gl.BindBuffer(GLEnum.ElementArrayBuffer, 0);
@@ -103,6 +124,8 @@ class Program
         _gl.TexParameterI(GLEnum.Texture2D, GLEnum.TextureWrapT, (int)TextureWrapMode.Repeat);
         _gl.TexParameterI(GLEnum.Texture2D, GLEnum.TextureMinFilter, (int)TextureMinFilter.Nearest);
         _gl.TexParameterI(GLEnum.Texture2D, GLEnum.TextureMagFilter, (int)TextureMagFilter.Nearest);
+        _gl.TexParameterI(GLEnum.Texture2D, GLEnum.Mipmap, (int)TextureMinFilter.Nearest);
+        _gl.TexParameterI(GLEnum.Texture2D, GLEnum.Mipmap, (int)TextureMagFilter.Nearest);
 
         _gl.BindTexture(TextureTarget.Texture2D, 0);
 
