@@ -18,6 +18,9 @@ class Program
     private static uint _ebo;
     private static uint _texture;
 
+    private static float _angle = -75f;
+    private static Vector3[] _cubePositions = new Vector3[5];
+
     public static void Main(string[] args)
     {
         WindowOptions options = WindowOptions.Default with
@@ -40,11 +43,21 @@ class Program
             input.Keyboards[i].KeyDown += KeyDown;
 
         _gl = _window.CreateOpenGL();
+        _gl.Enable(EnableCap.DepthTest);
 
         _vao = _gl.GenVertexArray();
         _gl.BindVertexArray(_vao);
 
         const float textureScale = 0.75f;
+
+        _cubePositions = new Vector3[]
+        {
+            new Vector3(0, -1.0f, -2.0f),
+            new Vector3(0, 0.3f, -5.0f),
+            new Vector3(0, 1.2f, -7.0f),
+            new Vector3(0.5f, 1.0f, -2.0f),
+            new Vector3(3.0f, 0.3f, -7.0f)
+        };
 
         float[] vertices =
         {
@@ -54,10 +67,42 @@ class Program
         //    -1f,  -1f, 0.0f,  0.0f, 1.0f,
         //    -1f,   1f, 0.0f,  0.0f, 0.0f
 
-            1f * textureScale,   1f * textureScale, 0.0f,  1.0f, 0.0f,
-            1f * textureScale,  -1f * textureScale, 0.0f,  1.0f, 1.0f,
-           -1f * textureScale,  -1f * textureScale, 0.0f,  0.0f, 1.0f,
-           -1f * textureScale,   1f * textureScale, 0.0f,  0.0f, 0.0f
+           -0.5f, -0.5f, -0.5f, 0.0f, 0.0f,
+0.5f, -0.5f, -0.5f, 1.0f, 0.0f,
+0.5f, 0.5f, -0.5f, 1.0f, 1.0f,
+0.5f, 0.5f, -0.5f, 1.0f, 1.0f,
+-0.5f, 0.5f, -0.5f, 0.0f, 1.0f,
+-0.5f, -0.5f, -0.5f, 0.0f, 0.0f,
+-0.5f, -0.5f, 0.5f, 0.0f, 0.0f,
+0.5f, -0.5f, 0.5f, 1.0f, 0.0f,
+0.5f, 0.5f, 0.5f, 1.0f, 1.0f,
+0.5f, 0.5f, 0.5f, 1.0f, 1.0f,
+-0.5f, 0.5f, 0.5f, 0.0f, 1.0f,
+-0.5f, -0.5f, 0.5f, 0.0f, 0.0f,
+-0.5f, 0.5f, 0.5f, 1.0f, 0.0f,
+-0.5f, 0.5f, -0.5f, 1.0f, 1.0f,
+-0.5f, -0.5f, -0.5f, 0.0f, 1.0f,
+-0.5f, -0.5f, -0.5f, 0.0f, 1.0f,
+-0.5f, -0.5f, 0.5f, 0.0f, 0.0f,
+-0.5f, 0.5f, 0.5f, 1.0f, 0.0f,
+0.5f, 0.5f, 0.5f, 1.0f, 0.0f,
+0.5f, 0.5f, -0.5f, 1.0f, 1.0f,
+0.5f, -0.5f, -0.5f, 0.0f, 1.0f,
+0.5f, -0.5f, -0.5f, 0.0f, 1.0f,
+0.5f, -0.5f, 0.5f, 0.0f, 0.0f,
+0.5f, 0.5f, 0.5f, 1.0f, 0.0f,
+-0.5f, -0.5f, -0.5f, 0.0f, 1.0f,
+0.5f, -0.5f, -0.5f, 1.0f, 1.0f,
+0.5f, -0.5f, 0.5f, 1.0f, 0.0f,
+0.5f, -0.5f, 0.5f, 1.0f, 0.0f,
+-0.5f, -0.5f, 0.5f, 0.0f, 0.0f,
+-0.5f, -0.5f, -0.5f, 0.0f, 1.0f,
+-0.5f, 0.5f, -0.5f, 0.0f, 1.0f,
+0.5f, 0.5f, -0.5f, 1.0f, 1.0f,
+0.5f, 0.5f, 0.5f, 1.0f, 0.0f,
+0.5f, 0.5f, 0.5f, 1.0f, 0.0f,
+-0.5f, 0.5f, 0.5f, 0.0f, 0.0f,
+-0.5f, 0.5f, -0.5f, 0.0f, 1.0f
         };
 
         _vbo = _gl.GenBuffer();
@@ -98,8 +143,8 @@ class Program
 
         Matrix4x4 modelMatrix = Matrix4x4.CreateRotationX(-75 * MathF.PI / 180.0f);
         Matrix4x4 viewMatrix = Matrix4x4.Identity;
-        viewMatrix.Translation = new Vector3(0, -0.6f, -3.0f);
-        Matrix4x4 proj = Matrix4x4.CreatePerspectiveFieldOfView(45 * MathF.PI / 180.0f, 800.0f / 600.0f, 0.1f, 100f);
+        viewMatrix.Translation = new Vector3(0, 0, -3.0f);
+        Matrix4x4 proj = Matrix4x4.CreatePerspectiveFieldOfView(45 * MathF.PI / 180.0f, 800.0f / 600.0f, 0.01f, 100f);
 
         _shader.SetUniform("model", modelMatrix);
         _shader.SetUniform("view", viewMatrix);
@@ -136,13 +181,25 @@ class Program
     private static unsafe void OnRender(double deltaTime)
     {
         _gl.ClearColor(Color.CornflowerBlue);
-        _gl.Clear(ClearBufferMask.ColorBufferBit);
+        _gl.Clear(ClearBufferMask.ColorBufferBit | ClearBufferMask.DepthBufferBit);
 
         _gl.BindVertexArray(_vao);
         _gl.ActiveTexture(TextureUnit.Texture0);
         _gl.BindTexture(TextureTarget.Texture2D, _texture);
         _shader.Use();
-        _gl.DrawElements(PrimitiveType.Triangles, 6, DrawElementsType.UnsignedInt, (void*)0);
+
+        _angle -= 3 * (float)deltaTime;
+        Matrix4x4 model = Matrix4x4.CreateRotationX(_angle / 2) * Matrix4x4.CreateRotationY(_angle / 2);
+        _shader.SetUniform("model", model);
+
+        // _gl.DrawElements(PrimitiveType.Triangles, 6, DrawElementsType.UnsignedInt, (void*)0);
+        for (int i = 0; i < _cubePositions.Length; i++)
+        {
+            Matrix4x4 transl = Matrix4x4.CreateTranslation(_cubePositions[i]);
+            _shader.SetUniform("view", transl);
+            _gl.DrawArrays(GLEnum.Triangles, 0, 36);
+        }
+        
     }
 
     private static void KeyDown(IKeyboard keyboard, Key key, int keyCode)
