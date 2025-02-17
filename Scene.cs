@@ -1,14 +1,11 @@
 using System.Numerics;
-using Silk.NET.OpenGL;
 
 public class Scene
 {
-    private GL _gl;
     public List<SceneObject> SceneObjects { get; private set; } = new List<SceneObject>();
     
-    public Scene(GL gl)
+    public Scene()
     {
-        _gl = gl;
     }
 
     public void AddCube(Vector3 position, Vector3 scale, Vector3 rotation, Shader shader)

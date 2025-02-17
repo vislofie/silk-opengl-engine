@@ -43,7 +43,7 @@ class Program
         _gl = _window.CreateOpenGL();
         _gl.Enable(EnableCap.DepthTest);
 
-        _currentScene = new Scene(_gl);
+        _currentScene = new Scene(;
         MeshShapes.SetContext(_gl);
         _shader = new Shader(_gl, "shader/shader.vert", "shader/shader.frag");
         _currentScene.AddCube(new Vector3(0, -0.5f, -3), Vector3.One, Vector3.Zero, _shader);
