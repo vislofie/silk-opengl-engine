@@ -3,10 +3,7 @@ using System.Numerics;
 public class Scene
 {
     public List<SceneObject> SceneObjects { get; private set; } = new List<SceneObject>();
-    
-    public Scene()
-    {
-    }
+    public Camera Camera { get; private set; } = new Camera();
 
     public void AddCube(Vector3 position, Vector3 scale, Vector3 rotation, Shader shader)
     {
@@ -16,10 +13,13 @@ public class Scene
 
     public void Render()
     {
+        if (Camera == null)
+            return;
+        
         foreach (SceneObject obj in SceneObjects)
         {
             MeshShapes.SetBrush(obj.Shape);
-            MeshShapes.Paint(obj.Position, obj.Scale, obj.Rotation, obj.Shader);
+            MeshShapes.Paint(Camera, obj.Position, obj.Scale, obj.Rotation, obj.Shader);
         }
     }
 

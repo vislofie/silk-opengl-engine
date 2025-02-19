@@ -1,4 +1,5 @@
-﻿using System.Drawing;
+﻿using System.Diagnostics;
+using System.Drawing;
 using System.Numerics;
 using Silk.NET.Input;
 using Silk.NET.Maths;
@@ -18,7 +19,9 @@ class Program
     private static uint _vbo;
     private static uint _ebo;
     private static uint _texture;
-    private static Vector3[] _cubePositions = new Vector3[5];
+    
+    private static Vector3 _movementVector = new Vector3(0, 0, 0);
+    private static Vector3 _rotationVector = new Vector3(0, 0, 0);
 
     public static void Main(string[] args)
     {
@@ -38,7 +41,10 @@ class Program
     {
         IInputContext input = _window.CreateInput();
         for (int i = 0; i < input.Keyboards.Count; i++)
+        {
             input.Keyboards[i].KeyDown += KeyDown;
+            input.Keyboards[i].KeyUp += KeyUp;
+        }
 
         _gl = _window.CreateOpenGL();
         _gl.Enable(EnableCap.DepthTest);
@@ -71,7 +77,7 @@ class Program
 
         int samplerLoc = _gl.GetUniformLocation(_shader.ProgramID, "uTexture");
         _gl.Uniform1(samplerLoc, 0);
-    }
+    }    
 
     private static unsafe void OnRender(double deltaTime)
     {
@@ -81,6 +87,8 @@ class Program
         _gl.ActiveTexture(TextureUnit.Texture0);
         _gl.BindTexture(TextureTarget.Texture2D, _texture);
 
+        _currentScene.Camera.Translate(_movementVector * (float)deltaTime);
+        _currentScene.Camera.Rotation += _rotationVector * (float)deltaTime;
         _currentScene.Render();
     }
 
@@ -88,5 +96,34 @@ class Program
     {
         if (key == Key.Escape)
             _window.Close();
+
+        if (key == Key.W)
+            _movementVector = new Vector3(_movementVector.X, _movementVector.Y, -1);
+        if (key == Key.S)
+            _movementVector = new Vector3(_movementVector.X, _movementVector.Y, 1);
+        if (key == Key.A)
+            _movementVector = new Vector3(_movementVector.X, 1, _movementVector.Z);
+        if (key == Key.D)
+            _movementVector = new Vector3(_movementVector.X, -1, _movementVector.Z);
+        if (key == Key.Z)
+            _rotationVector = new Vector3(_rotationVector.X, 30 * MathF.PI / 180, _rotationVector.Z);
+        if (key == Key.X)
+            _rotationVector = new Vector3(_rotationVector.X, -30 * MathF.PI / 180, _rotationVector.Z);
+    }
+
+    private static void KeyUp(IKeyboard keyboard, Key key, int arg3)
+    {
+        if (key == Key.W)
+            _movementVector = new Vector3(_movementVector.X, _movementVector.Y, 0);
+        if (key == Key.S)
+            _movementVector = new Vector3(_movementVector.X, _movementVector.Y, 0);
+        if (key == Key.A)
+            _movementVector = new Vector3(_movementVector.X, 0, _movementVector.Z);
+        if (key == Key.D)
+            _movementVector = new Vector3(_movementVector.X, 0, _movementVector.Z);
+        if (key == Key.Z)
+            _rotationVector = new Vector3(_rotationVector.X, 0, _rotationVector.Z);
+        if (key == Key.X)
+            _rotationVector = new Vector3(_rotationVector.X, 0, _rotationVector.Z);
     }
 }

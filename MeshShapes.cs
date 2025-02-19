@@ -1,5 +1,6 @@
 using System.Numerics;
 using Silk.NET.OpenGL;
+using Utility.Extensions;
 
 public static class MeshShapes
 {
@@ -83,11 +84,15 @@ public static class MeshShapes
         }
     }
 
-    public static void Paint(Vector3 position, Vector3 scale, Vector3 rotation, Shader shader)
+    public static void Paint(Camera camera, Vector3 position, Vector3 scale, Vector3 rotation, Shader shader)
     {
         Matrix4x4 modelMatrix = Matrix4x4.CreateRotationX(rotation.X) * Matrix4x4.CreateRotationY(rotation.Y) * Matrix4x4.CreateRotationZ(rotation.Z);
         Matrix4x4 viewMatrix = Matrix4x4.Identity;
         viewMatrix.Translation = position / scale;
+        
+        Vector3 cameraTarget = camera.Position + camera.QuatRotation.RotateVector3(new Vector3(0, 0, -1));
+        viewMatrix *= Matrix4x4.CreateLookAt(camera.Position, cameraTarget, Vector3.UnitY);
+
         Matrix4x4 proj = Matrix4x4.CreatePerspectiveFieldOfView(45 * MathF.PI / 180.0f, 800.0f / 600.0f, 0.01f, 100f);
 
         shader.SetUniform("model", modelMatrix);
